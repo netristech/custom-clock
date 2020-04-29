@@ -1,0 +1,20 @@
+.modal-open {
+    overflow-y: auto
+}
+
+.close {
+    float: right;
+    max-width: 60px;
+}
+
+.modal div[class*='modal-'] {
+    border: none;
+}
+
+.container.borders div[class*='col-'] {
+    border: 1px solid #eee;
+}
+
+#add {
+    font-size: 1.5rem;
+}
