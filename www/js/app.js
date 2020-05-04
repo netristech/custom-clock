@@ -1,37 +1,62 @@
-document.addEventListener("deviceready", init, false);
-function init() {
-	//console.log(cordova.file.applicationDirectory + "index.html");	
-	window.resolveLocalFileSystemURL(cordova.file.applicationDirectory, function(f) {
-		console.dir(f);
-	}, fail);
-	//This alias is a read-only pointer to the app itself
-	window.resolveLocalFileSystemURL(cordova.file.applicationDirectory + "www/schedule", readFile, fail);
+var scheduleFile;
+
+document.addEventListener("deviceready", onDeviceReady, false);
+
+function onDeviceReady() {
+	window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
+		dir.getFile("schedule.json", {create:true}, function(file) {
+            scheduleFile = file;
+            readFile(scheduleFile);
+        });
+    }, fail);
+    //window.resolveLocalFileSystemURL(cordova.file.dataDirectory + "schedule.json", readFile, fail);
 }
 
-function fail(e) {
-    console.log(e.code);
+function fail(err) {
+    alert("Error Code " + err.code + ": " + JSON.stringify(err));
 }
 
 function readFile(fileEntry) {
 	fileEntry.file(function(file) {
 		var reader = new FileReader();
 		reader.onloadend = function(e) {
-            //console.log("Text is: "+this.result);
-            console.log(e.target.result);
-            document.querySelector("#schedule").innerHTML = this.result;
-            //document.querySelector("#schedule").innerHTML = "Hello World!";
+            parseFile(this.result);
 		}
 		reader.readAsText(file);
-	}); 
+	}, fail); 
 }
 
-/*function readFile(fileEntry) {
-    fileEntry.file(function (file) {
-        var reader = new FileReader();
-        reader.onloadend = function() {
-            console.log("Successful file read: " + this.result);
-            displayFileData(fileEntry.fullPath + ": " + this.result);
+function writeFile(line) {
+	if (!scheduleFile) return;
+	scheduleFile.createWriter(function(fileWriter) {		
+		fileWriter.seek(fileWriter.length);
+		var blob = new Blob([line], {type:'text/plain'});
+		fileWriter.write(blob);
+	}, fail);
+}
+
+function parseFile(contents) {
+    if (contents == "") {
+        let event = {
+            "start": "00:00",
+            "end": "23:59",
+            "events": [
+                {
+                    "name": "Nothing Planned",
+                    "color": "#dddddd"
+                }
+            ]
         };
-        reader.readAsText(file);
-    }, onErrorReadFile);
-}*/
+        displayEvent(event);
+    } else {
+        contents = '[' + contents + ']';
+        var schedule = JSON.parse(contents);
+        for (i = 0; i < schedule.length; i++) {
+            displayEvent(schedule[i]);
+        }
+    }
+}
+
+function displayEvent(event) {
+    $("#schedule").append(JSON.stringify(event));
+}
