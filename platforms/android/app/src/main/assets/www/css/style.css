@@ -2,6 +2,10 @@
     overflow-y: auto
 } */
 
+.hide {
+    display: none;
+}
+
 .close {
     float: right;
     max-width: 60px;
@@ -11,15 +15,39 @@
     border: none;
 }
 
+.container {
+    width: 100vw;
+    min-height: 100vh;
+}
+
 .borders div[class*='col-'] {
     border: 1px solid #eee;
 }
 
-#add {
-    width: 100%;
+.btn {
+    /* width: 100%; */
+    min-width: 50px;
     font-size: 1.5rem;
+}
+
+#schedule-content {
+    position: relative;
 }
 
 .event {
     position: absolute;
+}
+
+.center {
+	/*position: relative;*/
+	position: absolute;
+    top: 50%;
+    left: 50%;
+	transform: translate(-50%, 50%);
+	-webkit-transform: translate(-50%, -50%);
+	-moz-transform: translate(-50%, -50%);
+	-ms-transform: translate(-50%, -50%);
+    -o-transform: translate(-50%, -50%);
+	backface-visibility: visible;
+	-webkit-backface-visibility: visible;
 }

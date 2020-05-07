@@ -11,6 +11,16 @@ function onDeviceReady() {
             readFile(scheduleFile);
         });
     }, fail);
+    $('.switch').click(function(e) {
+        e.preventDefault();
+        if ($('#clock').hasClass('hide')) {
+            $('#clock').removeClass('hide');
+            $('#schedule').addClass('hide');
+        } else {
+            $('#clock').addClass('hide');
+            $('#schedule').removeClass('hide');
+        }
+    });
     //window.resolveLocalFileSystemURL(cordova.file.dataDirectory + "schedule.json", readFile, fail);
 }
 
@@ -23,7 +33,7 @@ function drawSchedule() {
     var minutes = ['00', '15', '30', '45'];
     for (i = 0; i < hours.length; i++) {
         for (j = 0; j < minutes.length; j++) {
-            $('#schedule-content').append(`<div class="row"><div class="col-2">${hours[i]}:${minutes[j]}</div><div id="${hours[i]}:${minutes[j]}" class="col-10"></div></div>`);
+            $('#schedule-content').append(`<div class="row"><div class="col-2">${hours[i]}:${minutes[j]}</div><div id="a${hours[i]}${minutes[j]}" class="col-10"></div></div>`);
         }
     }
 }
@@ -50,9 +60,9 @@ function writeFile(line) {
 function parseFile(contents) {
     if (contents == "") {
         let event = {
-            "start": "00:00",
-            "end": "23:59",
-            "color": "240,240,240",
+            "start": "0000",
+            "end": "2345",
+            "color": "200,200,200",
             "events": [
                 {
                     "name": "Nothing Planned",
@@ -71,6 +81,8 @@ function parseFile(contents) {
 }
 
 function displayEvent(event) {
+    alert(`width is: ${$('#schedule-content').innerHeight()}`);
     //$("#schedule").append(JSON.stringify(event));
-    $("#schedule-content").append(`<div id="${event.start}" class="event" style="background-color: rgba(${event.color},0.5); top: ${$('#' + event.start).top()}; height: 100px;">${event.events[0].name}</div>`);
+    $("#schedule-content").append(`<div id="${event.start}" class="event" style="position: absolute; top: ${$('#a0000').position().top}px; left: ${$('#a0000').position().left}px; width: ${$('#a0000').width()}px; height: ${$('#a' + event.end).position().top - $('#a' + event.start).position().top}px; background-color: rgba(${event.color},0.8);">${event.events[0].name}</div>`);
+    $('#clock-content').append(`<div id="" class="center" style="">${event.events[0].name}</div>`);
 }

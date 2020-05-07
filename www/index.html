@@ -3,9 +3,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
-    <!--<link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />-->
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+    <!--<meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />-->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
     <link rel="stylesheet" href="css/style.css" />
 
     <title>Custom Clock</title>
@@ -14,6 +16,24 @@
 </head>
 
 <body>
+    <div class="container">
+        <div id="schedule">
+            <button type="button" class="btn btn-primary switch">
+                <i class="fa fa-clock-o" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="btn btn-primary" id="add" data-toggle="modal" data-target="#scheduleModal">
+                <i class="fa fa-plus" aria-hidden="true"></i>
+            </button>
+            <div id="schedule-content" class="borders"></div>
+        </div>
+        <div id="clock" class="hide">
+            <button type="button" class="btn btn-primary switch">
+                <i class="fa fa-calendar" aria-hidden="true"></i>
+            </button>
+            <div id="clock-content"></div>
+        </div>
+    </div>
+
     <div id="scheduleModal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -27,20 +47,14 @@
                 </div>
                 <div class="modal-footer">
                     <!--<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
-                    <button type="button" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-primary">
+                        <i class="fa fa-save" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container">
-        <div id="schedule">
-            <button type="button" class="btn btn-primary" id="add" data-toggle="modal" data-target="#scheduleModal">
-            <span aria-hidden="true">&plus;</span>
-            </button>
-            <div id="schedule-content" class="borders"></div>
-        </div>
-    </div>
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
     <!--<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>

@@ -17,7 +17,7 @@
        under the License.
 */
 
-const execa = require('execa');
+var superspawn = require('cordova-common').superspawn;
 
 var suffix_number_regex = /(\d+)$/;
 // Used for sorting Android targets, example strings to sort:
@@ -49,8 +49,6 @@ module.exports.print_newest_available_sdk_target = function () {
     });
 };
 
-// Versions should not be represented as float, so we disable quote-props here
-/* eslint-disable quote-props */
 module.exports.version_string_to_api_level = {
     '4.0': 14,
     '4.0.3': 15,
@@ -66,7 +64,6 @@ module.exports.version_string_to_api_level = {
     '7.1.1': 25,
     '8.0': 26
 };
-/* eslint-enable quote-props */
 
 function parse_targets (output) {
     var target_out = output.split('\n');
@@ -80,11 +77,11 @@ function parse_targets (output) {
 }
 
 module.exports.list_targets_with_android = function () {
-    return execa('android', ['list', 'target']).then(result => parse_targets(result.stdout));
+    return superspawn.spawn('android', ['list', 'target']).then(parse_targets);
 };
 
 module.exports.list_targets_with_avdmanager = function () {
-    return execa('avdmanager', ['list', 'target']).then(result => parse_targets(result.stdout));
+    return superspawn.spawn('avdmanager', ['list', 'target']).then(parse_targets);
 };
 
 module.exports.list_targets = function () {
