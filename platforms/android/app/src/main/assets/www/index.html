@@ -21,7 +21,7 @@
             <button type="button" class="btn btn-primary switch">
                 <i class="fa fa-clock-o" aria-hidden="true"></i>
             </button>
-            <button type="button" class="btn btn-primary" id="add" data-toggle="modal" data-target="#scheduleModal">
+            <button type="button" class="btn btn-primary" id="add" data-toggle="modal" data-target="#schedule-modal">
                 <i class="fa fa-plus" aria-hidden="true"></i>
             </button>
             <div id="schedule-content" class="borders"></div>
@@ -34,7 +34,7 @@
         </div>
     </div>
 
-    <div id="scheduleModal" class="modal fade" tabindex="-1" role="dialog">
+    <div id="schedule-modal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -43,11 +43,17 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p>Test</p>
+                    <form>
+                        <label>Event Name</label><input type="text" id="name" maxlength="30" />
+                        <label>Start Time</label><input type="time" id="start" step="900" />
+                        <label>Event Duration (minutes)</label><input type="number" id="duration" min="15" />
+                        <label>Event Color (RGB)</label><input type="color" id="color" />
+                        <label>Background Image</label><input id="image" type="file" />
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <!--<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
-                    <button type="button" class="btn btn-primary">
+                    <button type="button" id="save" class="btn btn-primary">
                         <i class="fa fa-save" aria-hidden="true"></i>
                     </button>
                 </div>
