@@ -1,4 +1,6 @@
 var scheduleFile;
+var schedule;
+var today = new Date();
 
 document.addEventListener("deviceready", onDeviceReady, false);
 
@@ -22,18 +24,27 @@ function onDeviceReady() {
     });
     $('#save').click(function(e) {
         e.preventDefault();
-        let event = {
-            "start": $('#start').val(),
+        var event = {
+            "start": $('#start').val().split(':').join(''),
             "duration": $('#duration').val(),
+            "color": $('#color').val(),
             "event": [
                 {
                     "name": $('#name').val(),
-                    "color": $('#color').val(),
                     "image": $('#image').val()
                 }
             ]
         }
-        writeFile(`${JSON.stringify(event)},\n`);
+        if (schedule.length < 2 && schedule[0].duration == '1440') {
+            $(`#b${schedule[0].start}`).remove();
+            schedule = [event];
+        } else {
+            schedule.push(event);
+        }
+        //writeFile(`${JSON.stringify(event)},`);
+        writeFile(JSON.stringify(schedule));
+        displayEvent(event);
+        $('#schedule-modal').modal('hide');
     });
 }
 
@@ -65,7 +76,7 @@ function readFile(fileEntry) {
 function writeFile(line) {
 	if (!scheduleFile) return;
 	scheduleFile.createWriter(function(fileWriter) {		
-		fileWriter.seek(fileWriter.length);
+		//fileWriter.seek(fileWriter.length);
 		var blob = new Blob([line], {type:'text/plain'});
 		fileWriter.write(blob);
 	}, fail);
@@ -73,34 +84,53 @@ function writeFile(line) {
 
 function parseFile(contents) {
     if (contents == "") {
-        let event = {
-            "start": "0000",
-            "duration": "1440",
-            "color": "#ddd",
-            "event": [
+        schedule = [
                 {
-                    "name": "Nothing Planned",
-                    "image": null
-                }
-            ]
-        };
-        displayEvent(event);
+                "start": "0000",
+                "duration": "1440",
+                "color": "#ddd",
+                "event": [
+                    {
+                        "name": "Nothing Planned",
+                        "image": null
+                    }
+                ]
+            }
+        ];
     } else {
-        contents = '[' + contents + ']';
-        var schedule = JSON.parse(contents);
-        for (i = 0; i < schedule.length; i++) {
-            displayEvent(schedule[i]);
-        }
+        //schedule = JSON.parse(`[${contents.substring(0, contents.length - 1)}]`);
+        schedule = JSON.parse(contents);
+    }
+    //displayEvents();
+    for (i = 0; i < schedule.length; i++) {
+        displayEvent(schedule[i]);
+    }
+}
+
+function isNow(event) {
+    let n = today.getHours() * 60 + today.getMinutes();
+    let s = Number(event.start.slice(0, 2)) * 60 + Number(event.start.slice(2));
+    let e = s + Number(event.duration);
+    //alert(`now: ${n} start: ${s} end: ${e}`);
+    if (n >= s && n <= e ) {
+        return true;
     }
 }
 
 function displayEvent(event) {
-    let t = $(`#a${event.start}`).position().top;
-    let l = $(`#a${event.start}`).position().left;
-    let b = t + $(`#a${event.start}`).outerHeight() * (event.duration / 15);
-    let w = $(`#a${event.start}`).outerWidth();
-    let h = b - t;
-    let c = event.color;
-    $("#schedule-content").append(`<div id="b${event.start}" class="event" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};">${event.event[0].name}</div>`);
-    $('#clock-content').append(`<div class="center"><strong>${event.event[0].name}</strong></div>`);
+    if (isNow(event)) {
+        $('#clock-content').html(`<div class="center"><strong>${event.event[0].name}</strong></div>`);
+    } else {
+        $('#clock-content').html(`<div class="center"><strong>Nothing Planned</strong></div>`);
+    }
+    var s = event.start;
+    if (!$(`#b${s}`).length) {
+        let t = $(`#a${s}`).position().top;
+        let l = $(`#a${s}`).position().left;
+        let b = t + $(`#a${s}`).outerHeight() * (event.duration / 15);
+        let w = $(`#a${s}`).outerWidth();
+        let h = b - t;
+        let c = event.color;
+        $("#schedule-content").append(`<div id="b${s}" class="event" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></div>`);
+    }
 }
