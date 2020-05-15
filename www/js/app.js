@@ -5,6 +5,7 @@ var today = new Date();
 document.addEventListener("deviceready", onDeviceReady, false);
 
 function onDeviceReady() {
+    //$('#schedule-content').css('padding-top', `${$('.buttons').outerHeight() + 8}px`);
     drawSchedule();
 	window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
 		dir.getFile("schedule.json", {create:true}, function(file) {
@@ -16,6 +17,7 @@ function onDeviceReady() {
         e.preventDefault();
         if ($('#clock').hasClass('hide')) {
             $('#clock').removeClass('hide');
+            displayClock();
             $('#schedule').addClass('hide');
         } else {
             $('#clock').addClass('hide');
@@ -24,7 +26,8 @@ function onDeviceReady() {
     });
     $('#save').click(function(e) {
         e.preventDefault();
-        var event = {
+        let event = {
+            "index": schedule.length.toString(),
             "start": $('#start').val().split(':').join(''),
             "duration": $('#duration').val(),
             "color": $('#color').val(),
@@ -34,16 +37,10 @@ function onDeviceReady() {
                     "image": $('#image').val()
                 }
             ]
-        }
-        if (schedule.length < 2 && schedule[0].duration == '1440') {
-            $(`#b${schedule[0].start}`).remove();
-            schedule = [event];
-        } else {
-            schedule.push(event);
-        }
-        //writeFile(`${JSON.stringify(event)},`);
+        };
+        schedule.push(event);
         writeFile(JSON.stringify(schedule));
-        displayEvent(event);
+        displaySchedule(event);
         $('#schedule-modal').modal('hide');
     });
 }
@@ -84,8 +81,9 @@ function writeFile(line) {
 
 function parseFile(contents) {
     if (contents == "") {
-        schedule = [
+        /*schedule = [
                 {
+                "index": "0",
                 "start": "0000",
                 "duration": "1440",
                 "color": "#ddd",
@@ -96,14 +94,17 @@ function parseFile(contents) {
                     }
                 ]
             }
-        ];
+        ];*/
+        schedule = [];
     } else {
-        //schedule = JSON.parse(`[${contents.substring(0, contents.length - 1)}]`);
         schedule = JSON.parse(contents);
     }
-    //displayEvents();
     for (i = 0; i < schedule.length; i++) {
-        displayEvent(schedule[i]);
+        //alert(JSON.stringify(schedule[i]));
+        displaySchedule(schedule[i]);
+    }
+    if ($('#schedule').hasClass('hide')) {
+        displayClock();
     }
 }
 
@@ -111,26 +112,52 @@ function isNow(event) {
     let n = today.getHours() * 60 + today.getMinutes();
     let s = Number(event.start.slice(0, 2)) * 60 + Number(event.start.slice(2));
     let e = s + Number(event.duration);
-    //alert(`now: ${n} start: ${s} end: ${e}`);
     if (n >= s && n <= e ) {
         return true;
     }
 }
 
-function displayEvent(event) {
-    if (isNow(event)) {
-        $('#clock-content').html(`<div class="center"><strong>${event.event[0].name}</strong></div>`);
-    } else {
-        $('#clock-content').html(`<div class="center"><strong>Nothing Planned</strong></div>`);
-    }
+function displaySchedule(event) {
     var s = event.start;
     if (!$(`#b${s}`).length) {
         let t = $(`#a${s}`).position().top;
         let l = $(`#a${s}`).position().left;
         let b = t + $(`#a${s}`).outerHeight() * (event.duration / 15);
-        let w = $(`#a${s}`).outerWidth();
+        let w = $(`#a${s}`).outerWidth() - 16;
         let h = b - t;
         let c = event.color;
-        $("#schedule-content").append(`<div id="b${s}" class="event" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></div>`);
+        $("#schedule-content").append(`<button type="button" id="b${s}" class="event" data="${event.index}" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></button>`);
+    }
+    $('.event').click(function(e) {
+        e.preventDefault();
+        var event = schedule[Number($(this).attr('data'))];
+        $('#edit-name').val(event.event[0].name);
+        $('#edit-duration').val(event.duration);
+        $('#edit-color').val(event.color);
+        $('#edit-image').val(event.event[0].image);
+        $('#edit-schedule-modal').modal();
+        $('#delete').click(function(e) {
+            e.preventDefault();
+            $(`#b${event.start}`).remove();
+            schedule.splice(Number(event.index), 1);
+            writeFile(JSON.stringify(schedule));
+            $('#edit-schedule-modal').modal('hide');
+        });
+    });
+}
+
+function displayClock() {
+    $('#clock').css('background-image', 'url(img/beach.jpg');
+    $('#clock-content').html(`<div class="center"><strong>Nothing Planned</strong></div>`);
+    for (i = 0; i < schedule.length; i++) {
+        if (isNow(schedule[i])) {
+            if (schedule[i].event[0].image != '') {
+                $('#clock').css('background-image', `url(${schedule[i].event[0].image})`);
+            } else {
+                $('#clock').css('background-image', 'none');
+                $('#clock').css('background-color', schedule[i].color);
+            }
+            $('#clock-content').html(`<div class="center"><strong>${schedule[i].event[0].name}</strong></div>`);
+        }
     }
 }

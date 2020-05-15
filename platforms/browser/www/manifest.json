@@ -3,7 +3,7 @@
   "display": "standalone",
   "name": "Custom Clock",
   "short_name": "Custom Clock",
-  "version": "io.cordova.custom-clock",
+  "version": "com.netris.CustomClock",
   "description": "Make a custom schedule and display the current custom time.",
   "author": "Netris Apps",
   "icons": [],
