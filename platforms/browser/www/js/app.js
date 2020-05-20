@@ -5,6 +5,7 @@ var today = new Date();
 document.addEventListener("deviceready", onDeviceReady, false);
 
 function onDeviceReady() {
+    var event;
     drawSchedule();
 	window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
 		dir.getFile("schedule.json", {create:true}, function(file) {
@@ -15,19 +16,27 @@ function onDeviceReady() {
     $('.switch').click(function(e) {
         e.preventDefault();
         if ($('#clock').hasClass('hide')) {
-            $('#clock').removeClass('hide');
-            displayClock();
             $('#schedule').addClass('hide');
+            $('#clock').removeClass('hide');
+            displayClock();         
         } else {
             $('#clock').addClass('hide');
             $('#schedule').removeClass('hide');
+            focusSchedule();
         }
+    });
+    $('#add').click(function(e) {
+        e.preventDefault();
+        $('#schedule-form').trigger('reset');
+        $('#update, #delete').addClass('hide');
+        $('label[for="start"], #shr, #smin, #save').removeClass('hide');
     });
     $('#save').click(function(e) {
         e.preventDefault();
-        var event = {
-            "start": $('#start').val().split(':').join(''),
-            "duration": $('#duration').val(),
+        event = {
+            "index": schedule.length.toString(),
+            "start": `${$('#shr').val()}:${$('#smin').val()}`,
+            "duration": `${$('#dhr').val()}:${$('#dmin').val()}`,
             "color": $('#color').val(),
             "event": [
                 {
@@ -35,20 +44,49 @@ function onDeviceReady() {
                     "image": $('#image').val()
                 }
             ]
-        }
-        if (schedule.length < 2 && schedule[0].duration == '1440') {
-            $(`#b${schedule[0].start}`).remove();
-            schedule = [event];
+        };
+        if (isConflict(event)) {
+            $('#shr, #smin, #dhr, #dmin').addClass('is-invalid');
         } else {
             schedule.push(event);
+            writeFile(JSON.stringify(schedule));
+            displaySchedule(event);
+            $('#schedule-modal').modal('hide');
         }
-        writeFile(JSON.stringify(schedule));
-        displaySchedule(event);
-        $('#schedule-modal').modal('hide');
+    });
+    $('#schedule-content').on('click', '.event', function() {
+        //e.preventDefault();
+        $('label[for="start"], #shr, #smin, #save').addClass('hide');
+        $('#delete, #update').removeClass('hide');
+        event = schedule[Number($(this).attr('data'))];
+        $('#name').val(event.event[0].name);
+        $('#dhr').val(event.duration.split(':')[0]);
+        $('#dmin').val(event.duration.split(':')[1]);
+        $('#color').val(event.color);
+        //$('#image').val(event.event[0].image);
+        $('#schedule-modal').modal();
+    });
+    $('#update').click(function(e) {
+        e.preventDefault();
+        event.event[0].name = $('#name').val();
+        event.duration = `${$('#dhr').val()}:${$('#dmin').val()}`;
+        event.color = $('#color').val();
+        event.event[0].image = $('#image').val();
+        if (isConflict(event)) {
+            $('#shr, #smin, #dhr, #dmin').addClass('is-invalid');
+        } else {
+            writeFile(JSON.stringify(schedule));
+            $(`#b${toTimestamp(event.start)}`).remove();
+            displaySchedule(event);
+            $('#schedule-modal').modal('hide');
+        }
     });
     $('#delete').click(function(e) {
         e.preventDefault();
-        $(`#b${$('#start').val()}`).remove();
+        $(`#b${toTimestamp(event.start)}`).remove();
+        schedule.splice(Number(event.index), 1);
+        writeFile(JSON.stringify(schedule));
+        $('#schedule-modal').modal('hide');
     });
 }
 
@@ -56,13 +94,20 @@ function fail(err) {
     alert("Error Code " + err.code + ": " + JSON.stringify(err));
 }
 
+function toTimestamp(str) {
+    return Number(str.split(':')[0]) * 60 + Number(str.split(':')[1]);
+}
+
 function drawSchedule() {
+    $('#schedule-content').append(`<div style="height: ${$('.buttons').outerHeight() + 8}px;"></div>`);
     var hours = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
     var minutes = ['00', '15', '30', '45'];
     for (i = 0; i < hours.length; i++) {
         //$('#hour').append(`<option value="${hours[i]}">${hours[i]}</option>`);
         for (j = 0; j < minutes.length; j++) {
-            $('#schedule-content').append(`<div class="row"><div class="col-2">${hours[i]}:${minutes[j]}</div><div id="a${hours[i]}${minutes[j]}" class="col-10"></div></div>`);
+            let t = `${hours[i]}:${minutes[j]}`;
+            $('#schedule-content').append(`<div class="row"><div class="col-2">${t}</div><div id="a${toTimestamp(t)}" class="col-10"></div></div>`);
+            //$('#schedule-content').append(`<div class="row"><div class="col-2">${t}</div><div id="a${t}" class="col-10"></div></div>`);
         }
     }
 }
@@ -87,22 +132,9 @@ function writeFile(line) {
 }
 
 function parseFile(contents) {
-    if (contents == "") {
-        schedule = [
-                {
-                "start": "0000",
-                "duration": "1440",
-                "color": "#ddd",
-                "event": [
-                    {
-                        "name": "Nothing Planned",
-                        "image": null
-                    }
-                ]
-            }
-        ];
+    if (contents == '') {
+        schedule = [];
     } else {
-        //schedule = JSON.parse(`[${contents.substring(0, contents.length - 1)}]`);
         schedule = JSON.parse(contents);
     }
     for (i = 0; i < schedule.length; i++) {
@@ -112,42 +144,59 @@ function parseFile(contents) {
         displayClock();
     }
 }
-
+/*
 function isNow(event) {
     let n = today.getHours() * 60 + today.getMinutes();
-    let s = Number(event.start.slice(0, 2)) * 60 + Number(event.start.slice(2));
-    let e = s + Number(event.duration);
+    //let s = Number(event.start.slice(0, 2)) * 60 + Number(event.start.slice(2));
+    let s = toTimestamp(event.start);
+    let e = s + toTimestamp(event.duration);
     if (n >= s && n <= e ) {
         return true;
     }
 }
 
-function displaySchedule(event) {
-    var s = event.start;
-    if (!$(`#b${s}`).length) {
-        let t = $(`#a${s}`).position().top;
-        let l = $(`#a${s}`).position().left;
-        let b = t + $(`#a${s}`).outerHeight() * (event.duration / 15);
-        let w = $(`#a${s}`).outerWidth();
-        let h = b - t;
-        let c = event.color;
-        $("#schedule-content").append(`<button type="button" id="b${s}" class="event" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></button>`);
+function isConflict(event) {
+    var s1 = toTimestamp(event.start);
+    var e1 = s1 + toTimestamp(event.duration);
+    for (i = 0; i < schedule.length; i++) {
+        let s2 = toTimestamp(schedule[i].start);
+        let e2 = s2 + toTimestamp(schedule[i].duration);
+        if (s1 <= e2 && s2 <= e1) {
+            return true;
+        }
     }
 }
 
+function displaySchedule(event) {
+    var s = toTimestamp(event.start);
+    if (!$(`#b${s}`).length) {
+        let t = $(`#a${s}`).position().top;
+        let l = $(`#a${s}`).position().left;
+        let b = t + $(`#a${s}`).outerHeight() * (toTimestamp(event.duration) / 15);
+        let w = $(`#a${s}`).outerWidth() - 8;
+        let h = b - t;
+        let c = event.color;
+        $("#schedule-content").append(`<button type="button" id="b${s}" class="event" data="${event.index}" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></button>`);
+    }
+}
+
+function focusSchedule() {
+    let h = today.getHours();
+    let m = 15 * (Math.floor(today.getMinutes() / 15);
+    let e = `#a${h * 60 + m}`;
+    let em = $(e).offset().top + ($(e).outerHeight() / 2);
+    $('html').scrollTop(em - $(window).height() / 2);
+}
+*/
 function displayClock() {
-	/*window.resolveLocalFileSystemURL(`${cordova.file.applicationDirectory}www/img/`, function(dir) {
-		dir.getFile("beach.jpg", {create:false}, function(file) {
-            $('#clock').css('background-image', `url(${file})`);
-        });
-    });*/
-    $('#clock').css('background-image', 'url(../img/beach.jpg');
+    $('#clock').css('background-image', 'url(img/beach.jpg');
     $('#clock-content').html(`<div class="center"><strong>Nothing Planned</strong></div>`);
     for (i = 0; i < schedule.length; i++) {
         if (isNow(schedule[i])) {
             if (schedule[i].event[0].image != '') {
                 $('#clock').css('background-image', `url(${schedule[i].event[0].image})`);
             } else {
+                $('#clock').css('background-image', 'none');
                 $('#clock').css('background-color', schedule[i].color);
             }
             $('#clock-content').html(`<div class="center"><strong>${schedule[i].event[0].name}</strong></div>`);
