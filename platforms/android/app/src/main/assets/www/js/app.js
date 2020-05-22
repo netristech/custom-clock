@@ -6,6 +6,7 @@ document.addEventListener("deviceready", onDeviceReady, false);
 
 function onDeviceReady() {
     var event;
+    var index;
     drawSchedule();
 	window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
 		dir.getFile("schedule.json", {create:true}, function(file) {
@@ -30,11 +31,11 @@ function onDeviceReady() {
         $('#schedule-form').trigger('reset');
         $('#update, #delete').addClass('hide');
         $('label[for="start"], #shr, #smin, #save').removeClass('hide');
+        $('#shr, $smin, $dhr, $dmin').removeClass('is-invalid');
     });
     $('#save').click(function(e) {
         e.preventDefault();
         event = {
-            "index": schedule.length.toString(),
             "start": `${$('#shr').val()}:${$('#smin').val()}`,
             "duration": `${$('#dhr').val()}:${$('#dmin').val()}`,
             "color": $('#color').val(),
@@ -58,7 +59,9 @@ function onDeviceReady() {
         //e.preventDefault();
         $('label[for="start"], #shr, #smin, #save').addClass('hide');
         $('#delete, #update').removeClass('hide');
-        event = schedule[Number($(this).attr('data'))];
+        $('#shr, #smin, #dhr, #dmin').removeClass('is-invalid');
+        index = getIndex($(this).attr('id').substring(1));
+        event = schedule[index];
         $('#name').val(event.event[0].name);
         $('#dhr').val(event.duration.split(':')[0]);
         $('#dmin').val(event.duration.split(':')[1]);
@@ -68,23 +71,27 @@ function onDeviceReady() {
     });
     $('#update').click(function(e) {
         e.preventDefault();
-        event.event[0].name = $('#name').val();
-        event.duration = `${$('#dhr').val()}:${$('#dmin').val()}`;
-        event.color = $('#color').val();
-        event.event[0].image = $('#image').val();
-        if (isConflict(event)) {
+        tempEvent = event;
+        schedule[index] = {};
+        tempEvent.event[0].name = $('#name').val();
+        tempEvent.duration = `${$('#dhr').val()}:${$('#dmin').val()}`;
+        tempEvent.color = $('#color').val();
+        tempEvent.event[0].image = $('#image').val();
+        if (isConflict(tempEvent)) {
+            schedule[index] = event;
             $('#shr, #smin, #dhr, #dmin').addClass('is-invalid');
         } else {
+            schedule[index] = tempEvent;
             writeFile(JSON.stringify(schedule));
             $(`#b${toTimestamp(event.start)}`).remove();
-            displaySchedule(event);
+            displaySchedule(schedule[index]);
             $('#schedule-modal').modal('hide');
         }
     });
     $('#delete').click(function(e) {
         e.preventDefault();
-        $(`#b${toTimestamp(event.start)}`).remove();
-        schedule.splice(Number(event.index), 1);
+        $(`#b${toTimestamp(schedule[index].start)}`).remove();
+        schedule.splice(index, 1);
         writeFile(JSON.stringify(schedule));
         $('#schedule-modal').modal('hide');
     });
@@ -96,6 +103,14 @@ function fail(err) {
 
 function toTimestamp(str) {
     return Number(str.split(':')[0]) * 60 + Number(str.split(':')[1]);
+}
+
+function getIndex(id) {
+    for (i = 0; i < schedule.length; i++) {
+        if (toTimestamp(schedule[i].start) == Number(id)) {
+            return i;
+        }
+    }
 }
 
 function drawSchedule() {
@@ -149,7 +164,7 @@ function isNow(event) {
     let n = today.getHours() * 60 + today.getMinutes();
     //let s = Number(event.start.slice(0, 2)) * 60 + Number(event.start.slice(2));
     let s = toTimestamp(event.start);
-    let e = s + toTimestamp(event.duration);
+    let e = s + (toTimestamp(event.duration) - 1);
     if (n >= s && n <= e ) {
         return true;
     }
@@ -157,12 +172,14 @@ function isNow(event) {
 
 function isConflict(event) {
     var s1 = toTimestamp(event.start);
-    var e1 = s1 + toTimestamp(event.duration);
+    var e1 = s1 + toTimestamp(event.duration) - 1;
     for (i = 0; i < schedule.length; i++) {
-        let s2 = toTimestamp(schedule[i].start);
-        let e2 = s2 + toTimestamp(schedule[i].duration);
-        if (s1 <= e2 && s2 <= e1) {
-            return true;
+        if (!jQuery.isEmptyObject(schedule[i])) {
+            let s2 = toTimestamp(schedule[i].start);
+            let e2 = s2 + toTimestamp(schedule[i].duration) - 1;
+            if (s1 <= e2 && s2 <= e1) {
+                return true;
+            }
         }
     }
 }
@@ -176,7 +193,7 @@ function displaySchedule(event) {
         let w = $(`#a${s}`).outerWidth() - 8;
         let h = b - t;
         let c = event.color;
-        $("#schedule-content").append(`<button type="button" id="b${s}" class="event" data="${event.index}" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></button>`);
+        $("#schedule-content").append(`<button type="button" id="b${s}" class="event" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></button>`);
     }
 }
 
