@@ -5,7 +5,7 @@ var today = new Date();
 document.addEventListener("deviceready", onDeviceReady, false);
 
 function onDeviceReady() {
-    var event;
+    //var event;
     var index;
     drawSchedule();
 	window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
@@ -31,61 +31,67 @@ function onDeviceReady() {
         $('#schedule-form').trigger('reset');
         $('#update, #delete').addClass('hide');
         $('label[for="start"], #shr, #smin, #save').removeClass('hide');
-        $('#shr, $smin, $dhr, $dmin').removeClass('is-invalid');
+        //$('#shr, $smin, $dhr, $dmin').removeClass('is-invalid');
+        clearError();
     });
     $('#save').click(function(e) {
         e.preventDefault();
-        event = {
-            "start": `${$('#shr').val()}:${$('#smin').val()}`,
-            "duration": `${$('#dhr').val()}:${$('#dmin').val()}`,
-            "color": $('#color').val(),
-            "event": [
-                {
-                    "name": $('#name').val(),
-                    "image": $('#image').val()
-                }
-            ]
-        };
-        if (isConflict(event)) {
-            $('#shr, #smin, #dhr, #dmin').addClass('is-invalid');
+        var event = [
+            {
+                "start": `${$('#shr').val()}:${$('#smin').val()}`,
+                "duration": `${$('#dhr').val()}:${$('#dmin').val()}`,
+                "color": $('#color').val(),
+                "event": [
+                    {
+                        "name": $('#name').val(),
+                        "image": $('#image').val()
+                    }
+                ]
+            }
+        ];
+        if (isSplit(event[0])) {
+            event = splitEvent(event[0]);
+        }
+        if (isConflict(event[0]) || event[1] != undefined && isConflict(event[1])) {
+            displayError();
         } else {
-            schedule.push(event);
-            writeFile(JSON.stringify(schedule));
-            displaySchedule(event);
-            $('#schedule-modal').modal('hide');
+            saveEvent(event);
         }
     });
     $('#schedule-content').on('click', '.event', function() {
         //e.preventDefault();
         $('label[for="start"], #shr, #smin, #save').addClass('hide');
         $('#delete, #update').removeClass('hide');
-        $('#shr, #smin, #dhr, #dmin').removeClass('is-invalid');
+        clearError();
         index = getIndex($(this).attr('id').substring(1));
-        event = schedule[index];
-        $('#name').val(event.event[0].name);
-        $('#dhr').val(event.duration.split(':')[0]);
-        $('#dmin').val(event.duration.split(':')[1]);
-        $('#color').val(event.color);
-        //$('#image').val(event.event[0].image);
+        //event = schedule[index];
+        $('#name').val(schedule[index].event[0].name);
+        $('#dhr').val(schedule[index].duration.split(':')[0]);
+        $('#dmin').val(schedule[index].duration.split(':')[1]);
+        $('#color').val(schedule[index].color);
+        //$('#image').val(schedule[index].event[0].image);
         $('#schedule-modal').modal();
     });
     $('#update').click(function(e) {
         e.preventDefault();
-        tempEvent = event;
+        var event = JSON.parse(JSON.stringify(schedule[index]));
+        var tempEvent = [JSON.parse(JSON.stringify(event))];
+        //alert(`${JSON.stringify(tempEvent)} - ${JSON.stringify(event)}`);
         schedule[index] = {};
-        tempEvent.event[0].name = $('#name').val();
-        tempEvent.duration = `${$('#dhr').val()}:${$('#dmin').val()}`;
-        tempEvent.color = $('#color').val();
-        tempEvent.event[0].image = $('#image').val();
-        if (isConflict(tempEvent)) {
+        tempEvent[0].event[0].name = $('#name').val();
+        tempEvent[0].duration = `${$('#dhr').val()}:${$('#dmin').val()}`;
+        tempEvent[0].color = $('#color').val();
+        tempEvent[0].event[0].image = $('#image').val();
+        if (isSplit(tempEvent[0])) {
+            tempEvent = splitEvent(tempEvent[0]);
+        }
+        if (isConflict(tempEvent[0]) || tempEvent[1] != undefined && isConflict(tempEvent[1])) {
             schedule[index] = event;
-            $('#shr, #smin, #dhr, #dmin').addClass('is-invalid');
+            displayError();
         } else {
-            schedule[index] = tempEvent;
-            writeFile(JSON.stringify(schedule));
             $(`#b${toTimestamp(event.start)}`).remove();
-            displaySchedule(schedule[index]);
-            $('#schedule-modal').modal('hide');
+            schedule.splice(index, 1);
+            saveEvent(tempEvent);
         }
     });
     $('#delete').click(function(e) {
@@ -103,6 +109,12 @@ function fail(err) {
 
 function toTimestamp(str) {
     return Number(str.split(':')[0]) * 60 + Number(str.split(':')[1]);
+}
+
+function toHumanTime(ts) {
+    let hr = Math.floor(ts / 60);
+    let min = ts - hr * 60;
+    return `${hr}:${min}`;
 }
 
 function getIndex(id) {
@@ -160,6 +172,31 @@ function parseFile(contents) {
     }
 }
 
+function isSplit(event) {
+    let e = toTimestamp(event.start) + toTimestamp(event.duration);
+    if (1440 < e) {
+        return true;
+    }
+}
+
+function splitEvent(event) {
+    let event1 = JSON.parse(JSON.stringify(event));
+    event1.duration = toHumanTime(1440 - toTimestamp(event.start));
+    let event2 = JSON.parse(JSON.stringify(event));
+    event2.duration = toHumanTime(toTimestamp(event.duration) - toTimestamp(event1.duration));
+    event2.start = '00:00';
+    return [event1, event2];
+}
+
+function saveEvent(event) {
+    for (i = 0; i < event.length; i++) {
+        schedule.push(event[i]);
+        writeFile(JSON.stringify(schedule));
+        displaySchedule(event[i]);
+    }
+    $('#schedule-modal').modal('hide');
+}
+
 function isNow(event) {
     let n = today.getHours() * 60 + today.getMinutes();
     //let s = Number(event.start.slice(0, 2)) * 60 + Number(event.start.slice(2));
@@ -182,6 +219,14 @@ function isConflict(event) {
             }
         }
     }
+}
+
+function displayError() {
+    $('#shr, #smin, #dhr, #dmin').addClass('is-invalid');
+}
+
+function clearError() {
+    $('#shr, #smin, #dhr, #dmin').removeClass('is-invalid');
 }
 
 function displaySchedule(event) {
