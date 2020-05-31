@@ -8,6 +8,7 @@ function onDeviceReady() {
     //var event;
     var index;
     drawSchedule();
+    drawModal();
 	window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
 		dir.getFile("schedule.json", {create:true}, function(file) {
             scheduleFile = file;
@@ -30,21 +31,26 @@ function onDeviceReady() {
         e.preventDefault();
         $('#schedule-form').trigger('reset');
         $('#update, #delete').addClass('hide');
-        $('label[for="start"], #shr, #smin, #save').removeClass('hide');
-        //$('#shr, $smin, $dhr, $dmin').removeClass('is-invalid');
+        $('label[for="start"], #start, #save').removeClass('hide');
         clearError();
+    });
+    $('#image').click(function(e) {
+        e.preventDefault();
+        let source = Camera.PictureSourceType.PHOTOLIBRARY;
+        let destination = Camera.DestinationType.FILE_URI;
+        navigator.camera.getPicture(onPhotoURISuccess, fail, { quality: 50, destinationType: destination, sourceType: source });
     });
     $('#save').click(function(e) {
         e.preventDefault();
         var event = [
             {
-                "start": `${$('#shr').val()}:${$('#smin').val()}`,
+                "start": `${$('#shr').val()}:${$('#smin').val()}:${$('#sap').val()}`,
                 "duration": `${$('#dhr').val()}:${$('#dmin').val()}`,
                 "color": $('#color').val(),
                 "event": [
                     {
                         "name": $('#name').val(),
-                        "image": $('#image').val()
+                        "image": $('#image-url').val()
                     }
                 ]
             }
@@ -60,7 +66,7 @@ function onDeviceReady() {
     });
     $('#schedule-content').on('click', '.event', function() {
         //e.preventDefault();
-        $('label[for="start"], #shr, #smin, #save').addClass('hide');
+        $('label[for="start"], #start, #save').addClass('hide');
         $('#delete, #update').removeClass('hide');
         clearError();
         index = getIndex($(this).attr('id').substring(1));
@@ -69,7 +75,7 @@ function onDeviceReady() {
         $('#dhr').val(schedule[index].duration.split(':')[0]);
         $('#dmin').val(schedule[index].duration.split(':')[1]);
         $('#color').val(schedule[index].color);
-        //$('#image').val(schedule[index].event[0].image);
+        $('#image-url').val(schedule[index].event[0].image);
         $('#schedule-modal').modal();
     });
     $('#update').click(function(e) {
@@ -79,9 +85,9 @@ function onDeviceReady() {
         //alert(`${JSON.stringify(tempEvent)} - ${JSON.stringify(event)}`);
         schedule[index] = {};
         tempEvent[0].event[0].name = $('#name').val();
-        tempEvent[0].duration = `${$('#dhr').val()}:${$('#dmin').val()}`;
+        tempEvent[0].duration = `${$('#dhr').val()}:${$('#dmin').val()}:${$('#dap').val()}`;
         tempEvent[0].color = $('#color').val();
-        tempEvent[0].event[0].image = $('#image').val();
+        tempEvent[0].event[0].image = $('#image-url').val();
         if (isSplit(tempEvent[0])) {
             tempEvent = splitEvent(tempEvent[0]);
         }
@@ -107,14 +113,41 @@ function fail(err) {
     alert("Error Code " + err.code + ": " + JSON.stringify(err));
 }
 
+function onPhotoURISuccess(imageURI) {
+    //alert(imageURI);
+    $('#image-url').val(imageURI);
+}
+
 function toTimestamp(str) {
-    return Number(str.split(':')[0]) * 60 + Number(str.split(':')[1]);
+    var ts;
+    if (str.split(':')[0] == '12') {
+        ts = Number(str.split(':')[1]);
+    } else {
+        ts = Number(str.split(':')[0]) * 60 + Number(str.split(':')[1]);
+    }
+    if (str.split(':')[2] != undefined && str.split(':')[2] == 'PM') {
+        ts += 720;
+    }
+    return ts;
 }
 
 function toHumanTime(ts) {
-    let hr = Math.floor(ts / 60);
-    let min = ts - hr * 60;
-    return `${hr}:${min}`;
+    var ampm;
+    var hr = Math.floor(ts / 60);
+    var min = ts - hr * 60;
+    if (min == 0) {
+        min = '00';
+    }
+    if (ts >= 720) {
+        ampm = 'PM';
+        hr -= 12;
+    } else {
+        ampm = 'AM';
+    }
+    if (hr == 0) {
+        hr = '12';
+    }
+    return `${hr}:${min}:${ampm}`;
 }
 
 function getIndex(id) {
@@ -130,12 +163,20 @@ function drawSchedule() {
     var hours = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
     var minutes = ['00', '15', '30', '45'];
     for (i = 0; i < hours.length; i++) {
-        //$('#hour').append(`<option value="${hours[i]}">${hours[i]}</option>`);
         for (j = 0; j < minutes.length; j++) {
             let t = `${hours[i]}:${minutes[j]}`;
             $('#schedule-content').append(`<div class="row"><div class="col-2">${t}</div><div id="a${toTimestamp(t)}" class="col-10"></div></div>`);
-            //$('#schedule-content').append(`<div class="row"><div class="col-2">${t}</div><div id="a${t}" class="col-10"></div></div>`);
         }
+    }
+}
+
+function drawModal() {
+    for (i = 1; i < 13; i++) {
+        $('#shr, #dhr').append(`<option value="${i}">${i}</option>`);
+    }
+    var minutes = ['00', '15', '30', '45'];
+    for (i = 0; i < minutes.length; i++) {
+        $('#smin, #dmin').append(`<option value="${minutes[i]}">${minutes[i]}</option>`);
     }
 }
 

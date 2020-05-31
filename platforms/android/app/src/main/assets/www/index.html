@@ -48,13 +48,21 @@
                     <form id="schedule-form">
                         <label for="name">Event Name</label><input type="text" id="name" class="form-control" maxlength="30" />
                         <label for="start">Start Time</label><!--<input type="time" id="start" class="form-control" step="900" />-->
-                        <input type="number" id="shr" class="hw form-control" min="0" max="23" placeholder="Hrs" />
-                        <input type="number" id="smin" class="hw form-control" min="0" max="59" step="15" placeholder="Mins" />                        
+                        <span id="start">
+                            <select id="shr"></select> : <select id="smin"></select>
+                            <select id="sap"><option value="AM">AM</option><option value="PM">PM</option></select>
+                        </span>
+                        <!--<input type="number" id="shr" class="hw form-control" min="0" max="23" placeholder="Hrs" />
+                        <input type="number" id="smin" class="hw form-control" min="0" max="59" step="15" placeholder="Mins" />-->
                         <label for="duration">Event Duration</label>
-                        <input type="number" id="dhr" class="hw form-control" min="0" max="16" placeholder="Hrs" />
-                        <input type="number" id="dmin" class="hw form-control" min="0" max="59" step="15" placeholder="Mins" />
+                        <span id="duration">
+                            <select id="dhr"></select> : <select id="dmin"></select>
+                            <!--<select id="dap"><option value="AM">AM</option><option value="PM">PM</option></select>-->
+                        </span>
+                        <!--<input type="number" id="dhr" class="hw form-control" min="0" max="16" placeholder="Hrs" />
+                        <input type="number" id="dmin" class="hw form-control" min="0" max="59" step="15" placeholder="Mins" />-->
                         <label for="color">Event Color</label><input type="color" id="color" class="hw form-control" />
-                        <label for="image">Background Image</label><input id="image" class="form-control" type="file" />
+                        <label for="image">Background Image</label><button type="button" id="image">Select</button><input type="text" id="image-url" class="hw form-control" />
                     </form>
                 </div>
                 <div class="modal-footer">

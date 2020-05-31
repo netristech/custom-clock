@@ -80,8 +80,9 @@ html, body {
     font-weight: bold;
 }
 
-.modal input {
+.modal input, .modal select {
     min-height: 40px;
+    min-width: 80px;
     border-radius: 8px;
     margin-bottom: 16px;
 }
