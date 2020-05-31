@@ -1,8 +1,8 @@
 {
-  "name": "customclock",
-  "displayName": "CustomClock",
+  "name": "helloworld",
+  "displayName": "HelloCordova",
   "version": "1.0.0",
-  "description": "Custom clock displays configurable time slots",
+  "description": "A sample Apache Cordova application that responds to the deviceready event.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,7 +10,7 @@
   "keywords": [
     "ecosystem:cordova"
   ],
-  "author": "Brian C. Dunham",
+  "author": "Apache Cordova Team",
   "license": "Apache-2.0",
   "dependencies": {
     "cordova-android": "^8.1.0",
