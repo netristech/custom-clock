@@ -1,26 +1,32 @@
 var scheduleFile;
 var schedule;
-var today = new Date();
+//var today = new Date();
+var interval;
 
 document.addEventListener("deviceready", onDeviceReady, false);
 
 function onDeviceReady() {
-    //var event;
     var index;
     drawSchedule();
     drawModal();
 	window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
-		dir.getFile("schedule.json", {create:true}, function(file) {
+		dir.getFile('schedule.json', {create:true}, function(file) {
             scheduleFile = file;
             readFile(scheduleFile);
         });
     }, fail);
+    $('#clock').swiperight(function() {
+		$(this).carousel('prev');
+	});  
+	$("#clock").swipeleft(function() {
+		$(this).carousel('next');
+	});
     $('.switch').click(function(e) {
         e.preventDefault();
         if ($('#clock').hasClass('hide')) {
             $('#schedule').addClass('hide');
             $('#clock').removeClass('hide');
-            displayClock();         
+            displayClock();
         } else {
             $('#clock').addClass('hide');
             $('#schedule').removeClass('hide');
@@ -30,15 +36,22 @@ function onDeviceReady() {
     $('#add').click(function(e) {
         e.preventDefault();
         $('#schedule-form').trigger('reset');
-        $('#update, #delete').addClass('hide');
-        $('label[for="start"], #start, #save').removeClass('hide');
+        $('#update, #delete, #alt-event').addClass('hide');
+        $('label[for="start"], #start, #save, #alt-add').removeClass('hide');
         clearError();
     });
     $('#image').click(function(e) {
         e.preventDefault();
-        let source = Camera.PictureSourceType.PHOTOLIBRARY;
-        let destination = Camera.DestinationType.FILE_URI;
-        navigator.camera.getPicture(onPhotoURISuccess, fail, { quality: 50, destinationType: destination, sourceType: source });
+        getPic(false);
+    });
+    $('#alt-image').click(function(e) {
+        e.preventDefault();
+        getPic(true);
+    });
+    $('#alt-add').click(function(e) {
+        e.preventDefault();
+        $('#alt-event').removeClass('hide');
+        $(this).addClass('hide');
     });
     $('#save').click(function(e) {
         e.preventDefault();
@@ -55,6 +68,12 @@ function onDeviceReady() {
                 ]
             }
         ];
+        if ($('#alt-name').val() != "") {
+            event[0].event.push({
+                "name": $('#alt-name').val(),
+                "image": $('#alt-image').val()
+            });
+        } 
         if (isSplit(event[0])) {
             event = splitEvent(event[0]);
         }
@@ -66,8 +85,8 @@ function onDeviceReady() {
     });
     $('#schedule-content').on('click', '.event', function() {
         //e.preventDefault();
-        $('label[for="start"], #start, #save').addClass('hide');
-        $('#delete, #update').removeClass('hide');
+        $('label[for="start"], #start, #save, #alt-event').addClass('hide');
+        $('#delete, #update, #alt-add').removeClass('hide');
         clearError();
         index = getIndex($(this).attr('id').substring(1));
         //event = schedule[index];
@@ -76,6 +95,11 @@ function onDeviceReady() {
         $('#dmin').val(schedule[index].duration.split(':')[1]);
         $('#color').val(schedule[index].color);
         $('#image-url').val(schedule[index].event[0].image);
+        if (schedule[index].event.length > 1) {
+            $('#alt-event').removeClass('hide');
+            $('#alt-name').val(schedule[index].event[1].name);
+            $('#alt-image').val(schedule[index].event[1].image);
+        }
         $('#schedule-modal').modal();
     });
     $('#update').click(function(e) {
@@ -88,6 +112,17 @@ function onDeviceReady() {
         tempEvent[0].duration = `${$('#dhr').val()}:${$('#dmin').val()}:${$('#dap').val()}`;
         tempEvent[0].color = $('#color').val();
         tempEvent[0].event[0].image = $('#image-url').val();
+        if ($('#alt-name').val() != "") {
+            if (tempEvent[0].event[1] != undefined) {
+                tempEvent[0].event[1].name = $('#alt-name').val();
+                tempEvent[0].event[1].image = $('#alt-image').val();
+            } else {
+                tempEvent[0].event.push({
+                    "name": $('#alt-name').val(),
+                    "image": $('#alt-image').val()
+                });
+            }
+        }
         if (isSplit(tempEvent[0])) {
             tempEvent = splitEvent(tempEvent[0]);
         }
@@ -102,6 +137,13 @@ function onDeviceReady() {
     });
     $('#delete').click(function(e) {
         e.preventDefault();
+        for (i = 0; i < schedule[index].event.length; i++) {
+            let temp = schedule[index].event[i].image;
+            schedule[index].event[i].image = '';
+            if (isOrphan(temp)) {
+                deleteFile(temp);
+            }
+        }
         $(`#b${toTimestamp(schedule[index].start)}`).remove();
         schedule.splice(index, 1);
         writeFile(JSON.stringify(schedule));
@@ -109,18 +151,59 @@ function onDeviceReady() {
     });
 }
 
+// for future use
+class Event {
+    constructor(params) {
+        this.start = params.start;
+        this.duration = params.duration;
+        this.color = params.color;
+        for (i = 0; i < params.event.length; i++) {
+            this.event[i].name = params.event[i].name;
+            this.event[i].image = params.event[i].image;
+        }
+    }
+    get end() {
+        return toTimestamp(this.start) + toTimestamp(this.duration);
+    }
+}
+
 function fail(err) {
     alert("Error Code " + err.code + ": " + JSON.stringify(err));
 }
 
-function onPhotoURISuccess(imageURI) {
-    //alert(imageURI);
-    $('#image-url').val(imageURI);
+function getPic(alt) {
+    let options = {
+        quality: 50,
+        destinationType: Camera.DestinationType.FILE_URI,
+        sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+        targetWidth: 1080,
+        targetHeight: 1920
+    }
+    navigator.camera.getPicture(function cameraSuccess(imageURI) {
+        var dest;
+        var filename = imageURI.split('/').slice(-1)[0];
+        window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
+            dest = dirEntry;
+        }, fail);
+        window.resolveLocalFileSystemURL(imageURI, function(fileEntry) {
+            fileEntry.copyTo(dest, filename, function() {
+                window.resolveLocalFileSystemURL(dest.toURL() + filename, function(file) {
+                    if (alt) {
+                        $('#alt-image-url').val(file.toURL());
+                    } else {
+                        $('#image-url').val(file.toURL());
+                    }
+                }, fail);
+            }, fail);
+        }, fail);
+    }, function cameraError(error) {
+        alert(`Error retreiving image: ${error}`);
+    }, options);
 }
 
 function toTimestamp(str) {
     var ts;
-    if (str.split(':')[0] == '12') {
+    if (str.split(':')[0] == '12' && str.split(':')[2] == 'AM') {
         ts = Number(str.split(':')[1]);
     } else {
         ts = Number(str.split(':')[0]) * 60 + Number(str.split(':')[1]);
@@ -159,7 +242,7 @@ function getIndex(id) {
 }
 
 function drawSchedule() {
-    $('#schedule-content').append(`<div style="height: ${$('.buttons').outerHeight() + 8}px;"></div>`);
+    $('#schedule-content').html(`<div style="height: ${$('.buttons').outerHeight() + 8}px;"></div>`);
     var hours = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'];
     var minutes = ['00', '15', '30', '45'];
     for (i = 0; i < hours.length; i++) {
@@ -168,11 +251,15 @@ function drawSchedule() {
             $('#schedule-content').append(`<div class="row"><div class="col-2">${t}</div><div id="a${toTimestamp(t)}" class="col-10"></div></div>`);
         }
     }
+    $('#schedule').addClass('hide');
 }
 
 function drawModal() {
     for (i = 1; i < 13; i++) {
-        $('#shr, #dhr').append(`<option value="${i}">${i}</option>`);
+        $('#shr').append(`<option value="${i}">${i}</option>`);
+    }
+    for (i = 0; i < 24; i++) {
+        $('#dhr').append(`<option value="${i}">${i}</option>`);
     }
     var minutes = ['00', '15', '30', '45'];
     for (i = 0; i < minutes.length; i++) {
@@ -213,6 +300,27 @@ function parseFile(contents) {
     }
 }
 
+function deleteFile(file) {
+    window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dir) {
+        dir.getFile(file.split('/').slice(-1)[0], {create:false}, function(fileEntry) {
+            fileEntry.remove(function() {
+                return;
+            }, fail);
+        });
+    }, fail);
+}
+
+function isOrphan(file) {
+    for (i = 0; i < schedule.length; i++) {
+        for (j = 0; j < schedule[i].event.length; j++) {
+            if (schedule[i].event[j].image == file) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 function isSplit(event) {
     let e = toTimestamp(event.start) + toTimestamp(event.duration);
     if (1440 < e) {
@@ -238,8 +346,13 @@ function saveEvent(event) {
     $('#schedule-modal').modal('hide');
 }
 
+function getNow() {
+    let now = new Date();
+    return toTimestamp(`${now.getHours()}:${now.getMinutes()}`);
+}
+
 function isNow(event) {
-    let n = today.getHours() * 60 + today.getMinutes();
+    let n = getNow();
     //let s = Number(event.start.slice(0, 2)) * 60 + Number(event.start.slice(2));
     let s = toTimestamp(event.start);
     let e = s + (toTimestamp(event.duration) - 1);
@@ -276,7 +389,7 @@ function displaySchedule(event) {
         let t = $(`#a${s}`).position().top;
         let l = $(`#a${s}`).position().left;
         let b = t + $(`#a${s}`).outerHeight() * (toTimestamp(event.duration) / 15);
-        let w = $(`#a${s}`).outerWidth() - 8;
+        let w = $(`#a${s}`).outerWidth() - 16;
         let h = b - t;
         let c = event.color;
         $("#schedule-content").append(`<button type="button" id="b${s}" class="event" style="top: ${t}px; left: ${l}px; width: ${w}px; height: ${h}px; background-color: ${c};"><span style="opacity: 1.0;">${event.event[0].name}</span></button>`);
@@ -284,25 +397,45 @@ function displaySchedule(event) {
 }
 
 function focusSchedule() {
-    let h = today.getHours();
-    let m = 15 * (Math.floor(today.getMinutes() / 15));
-    let e = `#a${h * 60 + m}`;
+    //let h = today.getHours();
+    //let m = 15 * (Math.floor(today.getMinutes() / 15));
+    let e = `#a${15 * (Math.floor(getNow() / 15))}`;
     let em = $(e).offset().top + ($(e).outerHeight() / 2);
     $('html').scrollTop(em - $(window).height() / 2);
 }
 
 function displayClock() {
-    $('#clock').css('background-image', 'url(img/beach.jpg');
-    $('#clock-content').html(`<div class="center"><strong>Nothing Planned</strong></div>`);
-    for (i = 0; i < schedule.length; i++) {
-        if (isNow(schedule[i])) {
-            if (schedule[i].event[0].image != '') {
-                $('#clock').css('background-image', `url(${schedule[i].event[0].image})`);
-            } else {
-                $('#clock').css('background-image', 'none');
-                $('#clock').css('background-color', schedule[i].color);
+    clearInterval(interval);
+    function refreshClock() {
+        $('#clock .carousel-inner .active').css('background-image', 'url(img/beach.jpg)');
+        $('#clock .carousel-inner .active').html(`<div class="center"><strong>Nothing Planned</strong></div>`);
+        for (i = 0; i < schedule.length; i++) {
+            if (isNow(schedule[i])) {
+                let d = toTimestamp(schedule[i].duration);
+                let e = toTimestamp(schedule[i].start) + d;
+                let rt = ((e - getNow()) / d) * 100;
+                if (schedule[i].event[0].image != '') {
+                    $('#clock .carousel-inner .active').css('background-image', `url(${schedule[i].event[0].image})`);
+                } else {
+                    $('#clock .carousel-inner .active').css('background-image', 'none');
+                    $('#clock .carousel-inner .active').css('background-color', schedule[i].color);
+                }
+                $('#clock .carousel-inner .active').html(`<div class="center"><strong>${schedule[i].event[0].name}</strong></div><div class="pbar-container"><div class="pbar" style="width: ${rt}%;"></div></div>`);
+                if (schedule[i].event[1] != undefined) {
+                    if (!$('#clock .carousel-inner .alt').length) {
+                        $('#clock .carousel-inner').append('<div class="carousel-item alt">');
+                    }
+                    if (schedule[i].event[1].image != '') {
+                        $('#clock .carousel-inner .alt').css('background-image', `url(${schedule[i].event[1].image})`);
+                    } else {
+                        $('#clock .carousel-inner .alt').css('background-image', 'none');
+                        $('#clock .carousel-inner .alt').css('background-color', schedule[i].color);
+                    }
+                    $('#clock .carousel-inner .alt').html(`<div class="center"><strong>${schedule[i].event[1].name}</strong></div><div class="pbar-container"><div class="pbar" style="width: ${rt}%;"></div></div>`);
+                }
             }
-            $('#clock-content').html(`<div class="center"><strong>${schedule[i].event[0].name}</strong></div>`);
         }
     }
+    refreshClock();
+    interval = setInterval(refreshClock, 30000);
 }

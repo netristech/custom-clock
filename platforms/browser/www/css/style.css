@@ -40,6 +40,7 @@ html, body {
 .buttons {
     position: fixed;
     z-index: 99;
+    margin: 8px;
 }
 
 .switch {
@@ -47,28 +48,24 @@ html, body {
     border-color: rgba(0,0,0,0.6) !important;
 }
 
-#clock, #schedule {
+#schedule {
     width: 100%;
-    height: 100%;
-    min-height: 100vh;
-    padding: 8px;
+    /*height: 100%;
+    min-height: 100vh;*/
 }
 
 #clock {
-    background-repeat: no-repeat;
+    /*background-repeat: no-repeat;
     background-size: cover;
-    background-position: center top;    
+    background-position: center top;*/
+    position: relative;
 }
 
-#clock-content {
-    width: 100%;
-    height: 100%;
-    font-size: 2.5rem;
-    color: #000;
-    -webkit-text-fill-color: #fff;
-    -webkit-text-stroke: 2px #000;
-    text-align: center;
-    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+#clock .carousel-item {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100vh;
 }
 
 #schedule-content {
@@ -100,6 +97,17 @@ html, body {
     opacity: 0.8;
 }
 
+.carousel-item {
+    width: 100%;
+    height: 100%;
+    font-size: 2.5rem;
+    color: #000;
+    -webkit-text-fill-color: #fff;
+    -webkit-text-stroke: 2px #000;
+    text-align: center;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
 .center {
 	/*position: relative;*/
 	position: absolute;
@@ -112,4 +120,24 @@ html, body {
     -o-transform: translate(-50%, -50%);
 	backface-visibility: visible;
 	-webkit-backface-visibility: visible;
+}
+
+.pbar-container {
+    position: absolute;
+    bottom: 0;
+    margin-left: calc(5vw - 8px);
+    margin-bottom: 20px;
+    width: 90vw;
+    height: 8px;
+    background-color: #999;
+    box-shadow: 
+        0 0 0 1px #000,
+        0 0 0 2px #fff,
+        0 0 0 3px #000;
+}
+
+.pbar {
+    position: relative;
+    height: 8px;
+    background-color: #fff;
 }

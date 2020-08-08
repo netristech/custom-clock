@@ -12,11 +12,11 @@
 
     <title>Custom Clock</title>
     <meta name="description" content="Netris Custom Clock App">
-    <meta name="author" content="Brian C. Dunham">    
+    <meta name="author" content="Brian C. Dunham">
 </head>
 
 <body>
-    <div id="schedule" class="hide">
+    <div id="schedule">
         <div class="buttons">
             <button type="button" class="btn btn-primary switch">
                 <i class="fa fa-clock-o" aria-hidden="true"></i>
@@ -27,13 +27,16 @@
         </div>
         <div id="schedule-content" class="borders"></div>
     </div>
-    <div id="clock">
-        <div class="buttons">
-            <button type="button" class="btn btn-primary switch">
-                <i class="fa fa-calendar" aria-hidden="true"></i>
-            </button>
+    <div id="clock" class="carousel slide" data-interval="false">
+        <div class="carousel-inner">
+            <div class="buttons">
+                <button type="button" class="btn btn-primary switch">
+                    <i class="fa fa-calendar" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="carousel-item active"></div>
+            </div>
         </div>
-        <div id="clock-content"></div>
     </div>
 
     <div id="schedule-modal" class="modal fade" tabindex="-1" role="dialog">
@@ -47,14 +50,14 @@
                 <div class="modal-body">
                     <form id="schedule-form">
                         <label for="name">Event Name</label><input type="text" id="name" class="form-control" maxlength="30" />
-                        <label for="start">Start Time</label><!--<input type="time" id="start" class="form-control" step="900" />-->
+                        <label for="start">Start Time (HR:MIN)</label><!--<input type="time" id="start" class="form-control" step="900" />-->
                         <span id="start">
                             <select id="shr"></select> : <select id="smin"></select>
                             <select id="sap"><option value="AM">AM</option><option value="PM">PM</option></select>
                         </span>
                         <!--<input type="number" id="shr" class="hw form-control" min="0" max="23" placeholder="Hrs" />
                         <input type="number" id="smin" class="hw form-control" min="0" max="59" step="15" placeholder="Mins" />-->
-                        <label for="duration">Event Duration</label>
+                        <label for="duration">Event Duration (HR:MIN)</label>
                         <span id="duration">
                             <select id="dhr"></select> : <select id="dmin"></select>
                             <!--<select id="dap"><option value="AM">AM</option><option value="PM">PM</option></select>-->
@@ -62,11 +65,17 @@
                         <!--<input type="number" id="dhr" class="hw form-control" min="0" max="16" placeholder="Hrs" />
                         <input type="number" id="dmin" class="hw form-control" min="0" max="59" step="15" placeholder="Mins" />-->
                         <label for="color">Event Color</label><input type="color" id="color" class="hw form-control" />
-                        <label for="image">Background Image</label><button type="button" id="image">Select</button><!--<input id="image" class="form-control" type="file" />-->
+                        <label for="image">Background Image</label><button type="button" id="image">Select</button><input type="text" id="image-url" class="hw form-control" />
+                        <div id="alt-event">
+                            <label for="alt-name">Alt. Event Name (optional)</label><input type="text" id="alt-name" class="form-control" maxlength="30" />
+                            <label for="alt-image">Alt. Background Image (optional)</label><button type="button" id="alt-image">Select</button><input type="text" id="alt-image-url" class="hw form-control" />
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <!--<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
+                    <button type="button" class="btn btn-primary" id="alt-add">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                    </button>
                     <button type="button" id="delete" class="btn btn-danger hide">
                         <i class="fa fa-trash" aria-hidden="true"></i>
                     </button>
@@ -83,6 +92,7 @@
 
     <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
     <!--<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>-->
+    <script type="text/javascript" src="js/mobile.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>    
     <script type="text/javascript" src="cordova.js"></script>
