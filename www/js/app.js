@@ -181,7 +181,8 @@ function getPic(alt) {
     }
     navigator.camera.getPicture(function cameraSuccess(imageURI) {
         var dest;
-        var filename = imageURI.split('/').slice(-1)[0];
+        //var filename = imageURI.split('/').slice(-1)[0];
+        var filename = Date.now().toString() + '.' + imageURI.split('.').slice(-1)[0];
         window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
             dest = dirEntry;
         }, fail);

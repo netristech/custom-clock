@@ -89,7 +89,7 @@ html, body {
 
 .event {
     position: absolute;
-    padding: 8px;
+    /*padding: 8px;*/
     border-radius: 12px;
     color: #000;
     opacity: 0.8;

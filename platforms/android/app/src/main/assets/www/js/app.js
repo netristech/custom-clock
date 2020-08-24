@@ -181,7 +181,8 @@ function getPic(alt) {
     }
     navigator.camera.getPicture(function cameraSuccess(imageURI) {
         var dest;
-        var filename = imageURI.split('/').slice(-1)[0];
+        //var filename = imageURI.split('/').slice(-1)[0];
+        var filename = Date.now().toString() + '.' + imageURI.split('.').slice(-1)[0];
         window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
             dest = dirEntry;
         }, fail);
@@ -203,7 +204,7 @@ function getPic(alt) {
 
 function toTimestamp(str) {
     var ts;
-    if (str.split(':')[0] == '12' && str.split(':')[2] == 'AM') {
+    if (str.split(':')[0] == '12' && str.split(':')[2] != undefined) {
         ts = Number(str.split(':')[1]);
     } else {
         ts = Number(str.split(':')[0]) * 60 + Number(str.split(':')[1]);
