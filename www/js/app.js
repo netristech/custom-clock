@@ -109,7 +109,7 @@ function onDeviceReady() {
         //alert(`${JSON.stringify(tempEvent)} - ${JSON.stringify(event)}`);
         schedule[index] = {};
         tempEvent[0].event[0].name = $('#name').val();
-        tempEvent[0].duration = `${$('#dhr').val()}:${$('#dmin').val()}:${$('#dap').val()}`;
+        tempEvent[0].duration = `${$('#dhr').val()}:${$('#dmin').val()}`;
         tempEvent[0].color = $('#color').val();
         tempEvent[0].event[0].image = $('#image-url').val();
         if ($('#alt-name').val() != "") {
@@ -181,8 +181,11 @@ function getPic(alt) {
     }
     navigator.camera.getPicture(function cameraSuccess(imageURI) {
         var dest;
-        //var filename = imageURI.split('/').slice(-1)[0];
-        var filename = Date.now().toString() + '.' + imageURI.split('.').slice(-1)[0];
+        var filename = imageURI.split('/').slice(-1)[0].replace(/\s+/g, '');
+        if (filename.split('.').slice(-1)[0] == 'jpeg') {
+            filename = filename.split('.')[0] + '.jpg';
+        }
+        //var filename = Date.now().toString() + '.' + imageURI.split('.').slice(-1)[0];
         window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
             dest = dirEntry;
         }, fail);
@@ -194,6 +197,7 @@ function getPic(alt) {
                     } else {
                         $('#image-url').val(file.toURL());
                     }
+                    $('#loading').fadeIn(200).delay(1000).fadeOut(200);
                 }, fail);
             }, fail);
         }, fail);
@@ -253,6 +257,7 @@ function drawSchedule() {
         }
     }
     $('#schedule').addClass('hide');
+    $('#loading').fadeOut(1);
 }
 
 function drawModal() {
@@ -334,7 +339,7 @@ function splitEvent(event) {
     event1.duration = toHumanTime(1440 - toTimestamp(event.start));
     let event2 = JSON.parse(JSON.stringify(event));
     event2.duration = toHumanTime(toTimestamp(event.duration) - toTimestamp(event1.duration));
-    event2.start = '00:00';
+    event2.start = '12:00:AM';
     return [event1, event2];
 }
 
