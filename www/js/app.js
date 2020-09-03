@@ -182,10 +182,9 @@ function getPic(alt) {
     navigator.camera.getPicture(function cameraSuccess(imageURI) {
         var dest;
         var filename = imageURI.split('/').slice(-1)[0].replace(/\s+/g, '');
-        if (filename.split('.').slice(-1)[0] == 'jpeg') {
-            filename = filename.split('.')[0] + '.jpg';
+        if (filename.substr(filename.lastIndexOf('.')).startsWith('.jpeg')) {
+            filename = filename.substr(0, filename.lastIndexOf('.')) + ".jpg";
         }
-        //var filename = Date.now().toString() + '.' + imageURI.split('.').slice(-1)[0];
         window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
             dest = dirEntry;
         }, fail);
@@ -421,7 +420,7 @@ function displayClock() {
                 let e = toTimestamp(schedule[i].start) + d;
                 let rt = ((e - getNow()) / d) * 100;
                 if (schedule[i].event[0].image != '') {
-                    $('#clock .carousel-inner .active').css('background-image', `url(${schedule[i].event[0].image})`);
+                    $('#clock .carousel-inner .active').css('background-image', `url('${schedule[i].event[0].image}')`);
                 } else {
                     $('#clock .carousel-inner .active').css('background-image', 'none');
                     $('#clock .carousel-inner .active').css('background-color', schedule[i].color);
@@ -432,7 +431,7 @@ function displayClock() {
                         $('#clock .carousel-inner').append('<div class="carousel-item alt">');
                     }
                     if (schedule[i].event[1].image != '') {
-                        $('#clock .carousel-inner .alt').css('background-image', `url(${schedule[i].event[1].image})`);
+                        $('#clock .carousel-inner .alt').css('background-image', `url('${schedule[i].event[1].image}')`);
                     } else {
                         $('#clock .carousel-inner .alt').css('background-image', 'none');
                         $('#clock .carousel-inner .alt').css('background-color', schedule[i].color);

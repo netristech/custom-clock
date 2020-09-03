@@ -182,7 +182,9 @@ function getPic(alt) {
     navigator.camera.getPicture(function cameraSuccess(imageURI) {
         var dest;
         var filename = imageURI.split('/').slice(-1)[0].replace(/\s+/g, '');
-        //var filename = Date.now().toString() + '.' + imageURI.split('.').slice(-1)[0];
+        if (filename.substr(filename.lastIndexOf('.')).startsWith('.jpeg')) {
+            filename = filename.substr(0, filename.lastIndexOf('.')) + ".jpg";
+        }
         window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function(dirEntry) {
             dest = dirEntry;
         }, fail);
@@ -195,7 +197,6 @@ function getPic(alt) {
                         $('#image-url').val(file.toURL());
                     }
                     $('#loading').fadeIn(200).delay(1000).fadeOut(200);
-                    //$('#save').fadeOut(200).delay(500).fadeIn(200);
                 }, fail);
             }, fail);
         }, fail);
@@ -419,7 +420,7 @@ function displayClock() {
                 let e = toTimestamp(schedule[i].start) + d;
                 let rt = ((e - getNow()) / d) * 100;
                 if (schedule[i].event[0].image != '') {
-                    $('#clock .carousel-inner .active').css('background-image', `url(${schedule[i].event[0].image})`);
+                    $('#clock .carousel-inner .active').css('background-image', `url('${schedule[i].event[0].image}')`);
                 } else {
                     $('#clock .carousel-inner .active').css('background-image', 'none');
                     $('#clock .carousel-inner .active').css('background-color', schedule[i].color);
